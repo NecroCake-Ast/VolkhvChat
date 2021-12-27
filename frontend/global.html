@@ -27,16 +27,15 @@
       <input id="input" autocomplete="off" /><button>Отправить</button>
     </form>
     
-
-    
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        var socket = io();
+        let socket = io();
       
-        var form = document.getElementById('form');
-        var input = document.getElementById('input');
-        var change = document.getElementById('change');
-        var room = document.getElementById('room');
+        let form = document.getElementById('form');
+        let input = document.getElementById('input');
+        let change = document.getElementById('change');
+        let room = document.getElementById('room');
+        let messages = document.getElementById('messages');
       
         form.addEventListener('submit', function(e) {
           e.preventDefault();
@@ -49,6 +48,7 @@
         change.addEventListener('submit', function(e) {
           e.preventDefault();
           if (room.value) {
+            socket.emit('leave room');
             socket.emit('change room', room.value);
             room.value = '';
           }
@@ -56,10 +56,14 @@
 
         socket.on('show message', function(msg) {
           console.info('event...');
-          var item = document.createElement('li');
-          item.textContent = msg;
+          let item = document.createElement('li');
+          item.textContent = '[' + msg.sendDate + ': ' + msg.senderIP + "] " + msg.senderName + ": " + msg.message;
           messages.appendChild(item);
           window.scrollTo(0, document.body.scrollHeight);
+        });
+
+        socket.on('chat changed', function() {
+          messages.innerHTML = '';
         });
     </script>
   </body>

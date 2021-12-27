@@ -2,6 +2,7 @@ import * as express from 'express';
 import * as path from 'path';
 import * as console from 'console';
 import { Socket } from 'socket.io';
+import Message from './models/message'
 
 const app = express();
 const http = require('http');
@@ -10,6 +11,9 @@ const { Server } = require("socket.io");
 const io = new Server(server);
 
 app.use(express.static(path.join(__dirname, 'public')));
+
+let channelStory = new Map<string, Message[]>();
+channelStory.set("global", []);
 
 app.get("/", async function (req: express.Request, res: express.Response) {
     try {
@@ -22,23 +26,40 @@ app.get("/", async function (req: express.Request, res: express.Response) {
 
 io.on('connection', (socket : Socket) => {
     console.log(socket.handshake.address + ' connected');
-
-    const globalListener = (msg : string) => {
-        console.log(socket.handshake.address + ' [global]: ' + msg);
-        io.emit('show message', msg);
-    };
-    socket.on('chat message', globalListener);
     
     const roomListener = (roomID : string) => {
         console.log(socket.handshake.address + " go to " + roomID);
-        socket.off('chat message', globalListener);
+        socket.removeAllListeners('chat message');
+        socket.join(roomID);
+        socket.emit('chat changed');
+        
+        if(!channelStory.get(roomID)) {
+            channelStory.set(roomID, []);
+        }
+        else {
+            for (const msg of channelStory.get(roomID)!) {
+                socket.emit('show message', msg);
+            }
+        }
 
         socket.on('chat message', (msg : string) => {
             console.log(socket.handshake.address + ' [' + roomID + ']: ' + msg);
-            io.to(roomID).emit('show message', msg);
+            let responseMsg = new Message(new Date(), socket.handshake.address, 'NoName', msg);
+            channelStory.get(roomID)!.push(responseMsg);
+            io.to(roomID).emit('show message', responseMsg);
+        });
+
+        socket.on('leave room', () => {
+            socket.leave(roomID);
         });
     };
     socket.on('change room', roomListener);
+
+    socket.on('disconnect', () => {
+        console.log('disconnect');
+    });
+
+    roomListener('global');
 });
 
 server.listen(1337, '192.168.0.105', async function () {
