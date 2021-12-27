@@ -2,29 +2,30 @@
 <html>
   <head>
     <title>Volkhv Chat</title>
-    <style>
-      body { margin: 0; padding-bottom: 3rem; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-
-      #form { background: rgba(0, 0, 0, 0.15); padding: 0.25rem; position: fixed; bottom: 0; left: 0; right: 0; display: flex; height: 3rem; box-sizing: border-box; backdrop-filter: blur(10px); }
-      #input { border: none; padding: 0 1rem; flex-grow: 1; border-radius: 2rem; margin: 0.25rem; }
-      #input:focus { outline: none; }
-      #form > button { background: #333; border: none; padding: 0 1rem; margin: 0.25rem; border-radius: 3px; outline: none; color: #fff; }
-
-      #messages { list-style-type: none; margin: 0; padding: 0; }
-      #messages > li { padding: 0.5rem 1rem; }
-      #messages > li:nth-child(odd) { background: #efefef; }
-    </style>
+    <link rel="stylesheet" href="./styles.css">
     
   </head>
   <body>
-    <form id="change" action="">
-      <input id="room" autocomplete="off" /><button>Сменить комнату</button>
+    <br/>
+    <form id="change" class="settingLayout" action="">
+      <input class="settingStyle" id="room" autocomplete="off" /><button class="settingStyle">Сменить комнату</button>
+    </form>
+    
+    <form id="rename" class="settingLayout" action="">
+      <input class="settingStyle" id="name" autocomplete="off" /><button class="settingStyle">Сменить имя</button>
     </form>
 
-    <ul id="messages"></ul>
+    <div class="chatLayout">
+      <div class="messagesLayout">
+        <ul id="messages" class="messageStyle"></ul>
+      </div>
+      <div class="usersLayout">
+        <ul id="users" class="messageStyle"></ul>
+      </div>
+    </div>
     
-    <form id="form" action="">
-      <input id="input" autocomplete="off" /><button>Отправить</button>
+    <form id="form" class="inpStyle" action="">
+      <input id="input" class="settingStyle" autocomplete="off" /><button class="settingStyle">Отправить</button>
     </form>
     
     <script src="/socket.io/socket.io.js"></script>
@@ -36,6 +37,9 @@
         let change = document.getElementById('change');
         let room = document.getElementById('room');
         let messages = document.getElementById('messages');
+        let rename = document.getElementById('rename');
+        let name = document.getElementById('name');
+        let users = document.getElementById('users');
       
         form.addEventListener('submit', function(e) {
           e.preventDefault();
@@ -54,16 +58,33 @@
           }
         });
 
+        rename.addEventListener('submit', function(e) {
+          e.preventDefault();
+          if (name.value) {
+            socket.emit('change name', name.value);
+            name.value = '';
+          }
+        });
+
         socket.on('show message', function(msg) {
           console.info('event...');
           let item = document.createElement('li');
-          item.textContent = '[' + msg.sendDate + ': ' + msg.senderIP + "] " + msg.senderName + ": " + msg.message;
+          item.textContent = '[' + msg.sendDate + ': ' + msg.senderIP + "] " + msg.roomName + '/' + msg.senderName + "> " + msg.message;
           messages.appendChild(item);
           window.scrollTo(0, document.body.scrollHeight);
         });
 
         socket.on('chat changed', function() {
           messages.innerHTML = '';
+        });
+
+        socket.on('users update', function(userList) {
+          users.innerHTML = '';
+          for (let user of userList) {
+            let item = document.createElement('li');
+            item.textContent = user.name + ': ' + user.ID;
+            users.appendChild(item);
+          }
         });
     </script>
   </body>
