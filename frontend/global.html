@@ -53,6 +53,14 @@
             room.value = '';
           }
         });
+
+        socket.on('show message', function(msg) {
+          console.info('event...');
+          var item = document.createElement('li');
+          item.textContent = msg;
+          messages.appendChild(item);
+          window.scrollTo(0, document.body.scrollHeight);
+        });
     </script>
   </body>
 </html>

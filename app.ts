@@ -21,9 +21,13 @@ app.get("/", async function (req: express.Request, res: express.Response) {
 });
 
 io.on('connection', (socket : Socket) => {
+    console.log(socket.handshake.address + ' connected');
+
     const globalListener = (msg : string) => {
         console.log(socket.handshake.address + ' [global]: ' + msg);
+        io.emit('show message', msg);
     };
+    socket.on('chat message', globalListener);
     
     const roomListener = (roomID : string) => {
         console.log(socket.handshake.address + " go to " + roomID);
@@ -31,10 +35,9 @@ io.on('connection', (socket : Socket) => {
 
         socket.on('chat message', (msg : string) => {
             console.log(socket.handshake.address + ' [' + roomID + ']: ' + msg);
+            io.to(roomID).emit('show message', msg);
         });
     };
-
-    socket.on('chat message', globalListener);
     socket.on('change room', roomListener);
 });
 
