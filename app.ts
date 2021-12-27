@@ -1,23 +1,43 @@
-import * as bodyParser from 'body-parser'
 import * as express from 'express';
 import * as path from 'path';
 import * as console from 'console';
+import { Socket } from 'socket.io';
 
 const app = express();
-
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'pug');
+const http = require('http');
+const server = http.createServer(app);
+const { Server } = require("socket.io");
+const io = new Server(server);
 
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(bodyParser.urlencoded({ extended: false }));
 
-app.use(async function (req, res, next) {
-    console.warn((new Date()).toLocaleString('ru') + ': Unknow address \'' + req.url + '\'');
-    res.status(404);
-    res.json({error: 'Not found'});
-    return;
+app.get("/", async function (req: express.Request, res: express.Response) {
+    try {
+        res.sendFile(__dirname + "/frontend/global.html");
+    } catch (e) {
+        console.error(e);
+        res.send(false);
+    }
 });
 
-app.listen(1337, async function () {
+io.on('connection', (socket : Socket) => {
+    const globalListener = (msg : string) => {
+        console.log(socket.handshake.address + ' [global]: ' + msg);
+    };
+    
+    const roomListener = (roomID : string) => {
+        console.log(socket.handshake.address + " go to " + roomID);
+        socket.off('chat message', globalListener);
+
+        socket.on('chat message', (msg : string) => {
+            console.log(socket.handshake.address + ' [' + roomID + ']: ' + msg);
+        });
+    };
+
+    socket.on('chat message', globalListener);
+    socket.on('change room', roomListener);
+});
+
+server.listen(1337, '192.168.0.105', async function () {
     console.info('Starting listen an port 1337\n');
 });
