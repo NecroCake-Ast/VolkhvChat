@@ -15,6 +15,10 @@
       <input class="settingStyle" id="name" autocomplete="off" /><button class="settingStyle">Сменить имя</button>
     </form>
 
+    <form id="private" class="settingLayout" action="">
+      <input class="settingStyle" id="privateInp" autocomplete="off" /><button class="settingStyle">Личное сообщение</button>
+    </form>
+
     <div class="chatLayout">
       <div class="messagesLayout">
         <ul id="messages" class="messageStyle"></ul>
@@ -40,6 +44,8 @@
         let rename = document.getElementById('rename');
         let name = document.getElementById('name');
         let users = document.getElementById('users');
+        let private = document.getElementById('private');
+        let privateInp = document.getElementById('privateInp');
       
         form.addEventListener('submit', function(e) {
           e.preventDefault();
@@ -63,6 +69,14 @@
           if (name.value) {
             socket.emit('change name', name.value);
             name.value = '';
+          }
+        });
+        
+        private.addEventListener('submit', function(e) {
+          e.preventDefault();
+          if (privateInp.value) {
+            socket.emit('private join', privateInp.value);
+            privateInp.value = '';
           }
         });
 
