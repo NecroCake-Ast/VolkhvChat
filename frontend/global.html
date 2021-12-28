@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Volkhv Chat</title>
+    <link rel="stylesheet" href="./styles.css">
+    
+  </head>
+  <body>
+    <br/>
+    <form id="change" class="settingLayout" action="">
+      <input class="settingStyle" id="room" autocomplete="off" /><button class="settingStyle">Сменить комнату</button>
+    </form>
+    
+    <form id="rename" class="settingLayout" action="">
+      <input class="settingStyle" id="name" autocomplete="off" /><button class="settingStyle">Сменить имя</button>
+    </form>
+
+    <form id="private" class="settingLayout" action="">
+      <input class="settingStyle" id="privateInp" autocomplete="off" /><button class="settingStyle">Личное сообщение</button>
+    </form>
+
+    <div class="chatLayout">
+      <div class="messagesLayout">
+        <ul id="messages" class="messageStyle"></ul>
+      </div>
+      <div class="usersLayout">
+        <ul id="users" class="messageStyle"></ul>
+      </div>
+    </div>
+    
+    <form id="form" class="inpStyle" action="">
+      <input id="input" class="settingStyle" autocomplete="off" /><button class="settingStyle">Отправить</button>
+    </form>
+    
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        let socket = io();
+      
+        let form = document.getElementById('form');
+        let input = document.getElementById('input');
+        let change = document.getElementById('change');
+        let room = document.getElementById('room');
+        let messages = document.getElementById('messages');
+        let rename = document.getElementById('rename');
+        let name = document.getElementById('name');
+        let users = document.getElementById('users');
+        let private = document.getElementById('private');
+        let privateInp = document.getElementById('privateInp');
+      
+        form.addEventListener('submit', function(e) {
+          e.preventDefault();
+          if (input.value) {
+            socket.emit('chat message', input.value);
+            input.value = '';
+          }
+        });
+
+        change.addEventListener('submit', function(e) {
+          e.preventDefault();
+          if (room.value) {
+            socket.emit('leave room');
+            socket.emit('change room', room.value);
+            room.value = '';
+          }
+        });
+
+        rename.addEventListener('submit', function(e) {
+          e.preventDefault();
+          if (name.value) {
+            socket.emit('change name', name.value);
+            name.value = '';
+          }
+        });
+        
+        private.addEventListener('submit', function(e) {
+          e.preventDefault();
+          if (privateInp.value) {
+            socket.emit('private join', privateInp.value);
+            privateInp.value = '';
+          }
+        });
+
+        socket.on('show message', function(msg) {
+          console.info('event...');
+          let item = document.createElement('li');
+          item.textContent = '[' + msg.sendDate + ': ' + msg.senderIP + "] " + msg.roomName + '/' + msg.senderName + "> " + msg.message;
+          messages.appendChild(item);
+          window.scrollTo(0, document.body.scrollHeight);
+        });
+
+        socket.on('chat changed', function() {
+          messages.innerHTML = '';
+        });
+
+        socket.on('users update', function(userList) {
+          users.innerHTML = '';
+          for (let user of userList) {
+            let item = document.createElement('li');
+            item.textContent = user.name + ': ' + user.ID;
+            users.appendChild(item);
+          }
+        });
+    </script>
+  </body>
+</html>
